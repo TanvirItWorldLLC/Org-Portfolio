@@ -1,0 +1,44 @@
+services:
+  # Backend API Service
+  - type: web
+    name: org-portfolio-api
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm install --workspace=server
+    startCommand: npm run start --workspace=server
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "4000"
+      - key: CLIENT_URL
+        value: https://org-portfolio-frontend.onrender.com
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_PATH
+        value: ./data/portfolio.json
+
+  # Frontend Static Site
+  - type: web
+    name: org-portfolio-frontend
+    runtime: static
+    plan: free
+    region: oregon
+    buildCommand: npm run build --workspace=client
+    staticPublishPath: ./client/dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://org-portfolio-api.onrender.com/api
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+# Optional: PostgreSQL database (if you want to upgrade from JSON file later)
+# databases:
+#   - name: org-portfolio-db
+#     plan: free
+#     databaseName: org_portfolio
+#     user: org_portfolio_user
