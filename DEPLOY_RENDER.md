@@ -67,7 +67,7 @@ If you prefer manual setup:
 3. Configure:
    ```
    Name: org-portfolio-frontend
-   Build Command: cd client && npm ci && npm run build
+   Build Command: cd client && npm ci --include=dev && npm run build
    Publish Directory: client/dist
    ```
 4. **Environment Variables**:

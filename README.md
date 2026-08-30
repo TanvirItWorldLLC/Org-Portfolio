@@ -177,7 +177,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --only=production
 COPY . .
-RUN cd client && npm ci && npm run build
+RUN cd client && npm ci --include=dev && npm run build
 EXPOSE 4000
 CMD ["npm", "run", "start"]
 ```

@@ -26,7 +26,7 @@ services:
     runtime: static
     plan: free
     region: oregon
-    buildCommand: cd client && npm ci && npm run build
+    buildCommand: cd client && npm ci --include=dev && npm run build
     staticPublishPath: ./client/dist
     envVars:
       - key: VITE_API_URL
