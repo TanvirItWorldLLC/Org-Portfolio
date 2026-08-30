@@ -67,7 +67,7 @@ If you prefer manual setup:
 3. Configure:
    ```
    Name: org-portfolio-frontend
-   Build Command: npm install --workspace=client && npm run build --workspace=client
+   Build Command: cd client && npm ci && npm run build
    Publish Directory: client/dist
    ```
 4. **Environment Variables**:

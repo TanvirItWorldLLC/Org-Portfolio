@@ -115,7 +115,7 @@ npm run install:all        # Install all dependencies
 
 # Client
 npm run dev --workspace=client      # Start Vite dev server
-npm run build --workspace=client    # Build for production (auto-installs deps)
+npm run build --workspace=client    # Build for production (auto-installs deps via npm ci)
 npm run preview --workspace=client  # Preview production build
 
 # Server
@@ -177,7 +177,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --only=production
 COPY . .
-RUN npm install --workspace=client && npm run build --workspace=client
+RUN cd client && npm ci && npm run build
 EXPOSE 4000
 CMD ["npm", "run", "start"]
 ```
