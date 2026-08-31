@@ -1,8 +1,6 @@
 /* eslint-disable no-console */
-import { PrismaClient, UserRole, UserStatus, ProjectStatus } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import bcrypt from 'bcryptjs';
-
-const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Seeding database...');
@@ -20,8 +18,8 @@ async function main() {
       email: adminEmail,
       password: hashed,
       name: adminName,
-      role: UserRole.ADMIN,
-      status: UserStatus.ACTIVE,
+      role: 'ADMIN',
+      status: 'ACTIVE',
     },
   });
   console.log(`✓ Admin user: ${admin.email} (${adminPassword})`);
@@ -58,18 +56,19 @@ async function main() {
     },
   ];
 
-  const categories = await Promise.all(
-    categoryDefs.map((cat) =>
-      prisma.category.upsert({
-        where: { slug: cat.slug },
-        update: cat,
-        create: cat,
-      }),
-    ),
-  );
+  const categories = [];
+  for (const cat of categoryDefs) {
+    const upserted = await prisma.category.upsert({
+      where: { slug: cat.slug },
+      update: cat,
+      create: cat,
+    });
+    categories.push(upserted);
+  }
   console.log(`✓ Categories: ${categories.length}`);
 
-  const bySlug = Object.fromEntries(categories.map((c) => [c.slug, c]));
+  const bySlug: Record<string, { id: string; slug: string }> = {};
+  for (const c of categories) bySlug[c.slug] = c;
 
   // ---- Sample projects ----
   const projectDefs = [
@@ -88,7 +87,7 @@ async function main() {
       technologies: ['React', 'Three.js', 'React Three Fiber', 'Tailwind CSS', 'Framer Motion'],
       tags: ['portfolio', '3d', 'template', 'react', 'webgl'],
       color: '#0ea5e9',
-      status: ProjectStatus.PUBLISHED,
+      status: 'PUBLISHED',
       featured: true,
       views: 12500,
       clientName: 'Internal Project',
@@ -115,7 +114,7 @@ async function main() {
       technologies: ['React', 'Three.js', 'WebXR', 'Stripe', 'Node.js', 'MySQL'],
       tags: ['ecommerce', '3d', 'ar', 'webxr', 'shopping'],
       color: '#8b5cf6',
-      status: ProjectStatus.PUBLISHED,
+      status: 'PUBLISHED',
       featured: true,
       views: 28400,
       clientName: 'TechStart Inc',
@@ -142,7 +141,7 @@ async function main() {
       technologies: ['Three.js', 'GSAP', 'After Effects', 'Figma', 'Principle'],
       tags: ['branding', '3d', 'motion', 'identity', 'logo'],
       color: '#ec4899',
-      status: ProjectStatus.PUBLISHED,
+      status: 'PUBLISHED',
       featured: false,
       views: 8900,
       clientName: 'Creative Agency',
@@ -181,5 +180,10 @@ main()
     process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect();
+    // Prisma's $disconnect is a method; the local fallback doesn't need it,
+    // but it's safe to call (no-op on the local fallback).
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (prisma as any).$disconnect?.();
+    } catch {}
   });
