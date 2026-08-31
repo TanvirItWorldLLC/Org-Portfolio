@@ -1,0 +1,166 @@
+// Org Portfolio - Prisma Schema
+// Database: MySQL 8 / MariaDB 10.6+
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url    = "mysql://portfolio:portfolio@localhost:3306/org_portfolio"
+}
+
+// ---- Users ----
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      UserRole @default(USER)
+  status    UserStatus @default(ACTIVE)
+  avatar    String?
+  lastLogin DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders    Order[]
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+// ---- Categories ----
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?  @db.Text
+  color       String   @default("#0ea5e9")
+  icon        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  projects    Project[]
+
+  @@index([slug])
+  @@map("categories")
+}
+
+// ---- Projects ----
+model Project {
+  id             String   @id @default(cuid())
+  title          String
+  slug           String   @unique
+  description    String   @db.Text
+  longDescription String? @db.Text
+  thumbnail      String?  @db.Text
+  gallery        Json?    // array of urls
+  categoryId     String?
+  technologies   Json?    // array of strings
+  tags           Json?    // array of strings
+  color          String   @default("#0ea5e9")
+  status         ProjectStatus @default(DRAFT)
+  featured       Boolean  @default(false)
+  views          Int      @default(0)
+  clientName     String?
+  projectUrl     String?
+  githubUrl      String?
+  duration       String?
+  teamSize       Int?
+  challenges     Json?    // array of strings
+  solutions      Json?    // array of strings
+  results        Json?    // array of strings
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  category       Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([slug])
+  @@index([status])
+  @@index([categoryId])
+  @@index([featured])
+  @@map("projects")
+}
+
+enum ProjectStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+// ---- Orders ----
+model Order {
+  id             String   @id @default(cuid())
+  orderNumber    String   @unique // ORD-XXXX-XXXX
+  projectType    String   // portfolio|ecommerce|landing|configurator|exhibition|custom
+  plan          String   // starter|professional|enterprise
+  totalPrice    Int      // cents
+  status        OrderStatus @default(PENDING)
+  projectDetails Json?   // { title, description, requirements, referenceUrls, deadline }
+  contactInfo   Json     // { name, email, company, phone, preferredContact }
+  userId        String?
+  notes         String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([userId])
+  @@index([orderNumber])
+  @@map("orders")
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  REVIEW
+  COMPLETED
+  CANCELLED
+}
+
+// ---- Settings (singleton row, id = "default") ----
+model Setting {
+  id        String   @id @default("default")
+  // Site
+  siteName        String   @default("Org Portfolio")
+  siteDescription String?  @db.Text
+  siteUrl         String?
+  contactEmail    String?
+  // Theme
+  primaryColor    String   @default("#0ea5e9")
+  secondaryColor  String   @default("#8b5cf6")
+  darkMode        String   @default("system") // system|light|dark
+  // Notifications (booleans stored as strings for simplicity)
+  emailNewOrder        String  @default("true")
+  emailOrderUpdates    String  @default("true")
+  emailNewUser         String  @default("true")
+  // Security
+  twoFactorAuth        String  @default("false")
+  sessionTimeout       Int     @default(30) // minutes
+  maxLoginAttempts     Int     @default(5)
+  passwordMinLength    Int     @default(8)
+  // API
+  apiRateLimit         Int     @default(1000)
+  apiEnabled           String  @default("true")
+  // Maintenance
+  maintenanceMode      String  @default("false")
+  logRetention         Int     @default(90)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("settings")
+}
